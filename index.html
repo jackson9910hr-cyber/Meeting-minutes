@@ -1,430 +1,514 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>회의록 관리 시스템</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
   :root {
-    --bg: #0f1117;
-    --surface: #1a1d27;
-    --card: #21253a;
-    --border: #2e3350;
-    --accent: #4f8ef7;
-    --accent2: #7c3aed;
-    --text: #e8eaf6;
-    --muted: #8892b0;
-    --success: #43e97b;
-    --danger: #f7576a;
+    --bg:        #f0f4f8;
+    --surface:   #ffffff;
+    --surface2:  #f7fafc;
+    --border:    #dde3ea;
+    --border2:   #c9d2db;
+    --accent:    #0057ff;
+    --accent-l:  #e8eeff;
+    --accent2:   #00b8a9;
+    --text:      #0f1923;
+    --text2:     #3d4f60;
+    --muted:     #7d8fa3;
+    --success:   #00b86e;
+    --danger:    #e8335a;
+    --shadow:    0 1px 3px rgba(0,30,80,0.07), 0 4px 16px rgba(0,30,80,0.06);
+    --shadow-md: 0 4px 24px rgba(0,30,80,0.10), 0 1px 4px rgba(0,30,80,0.06);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    font-family: 'DM Sans', 'Noto Sans KR', sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
   }
-
-  /* 헤더 */
-  header {
-    background: linear-gradient(135deg, #1a1d27 0%, #21253a 100%);
-    border-bottom: 1px solid var(--border);
-    padding: 18px 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  header h1 {
-    font-size: 1.3rem;
-    font-weight: 700;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    letter-spacing: -0.5px;
-  }
-  .header-btns { display: flex; gap: 10px; }
-
-  /* 탭 */
-  .tabs {
-    display: flex;
-    gap: 0;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 0 32px;
-  }
-  .tab-btn {
-    padding: 14px 28px;
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-size: 0.95rem;
-    font-weight: 500;
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-    transition: all 0.2s;
-    font-family: inherit;
-  }
-  .tab-btn.active {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
-  }
-  .tab-btn:hover { color: var(--text); }
-
-  /* 메인 레이아웃 */
-  main { max-width: 960px; margin: 0 auto; padding: 32px 20px; }
-
-  /* 탭 패널 */
-  .panel { display: none; }
-  .panel.active { display: block; }
-
-  /* 카드 */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 28px;
-    margin-bottom: 20px;
-  }
-  .card-title {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--accent);
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  /* 폼 */
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-  .form-group { display: flex; flex-direction: column; gap: 7px; }
-  .form-group.full { grid-column: 1 / -1; }
-  label {
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  input, textarea, select {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    font-size: 0.95rem;
-    padding: 11px 14px;
-    font-family: inherit;
-    transition: border-color 0.2s;
-    outline: none;
-    resize: vertical;
-  }
-  input:focus, textarea:focus, select:focus {
-    border-color: var(--accent);
-  }
-  textarea { min-height: 100px; }
-
-  /* 버튼 */
-  .btn {
-    padding: 11px 22px;
-    border-radius: 8px;
-    border: none;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: inherit;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-  }
-  .btn-primary {
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    color: #fff;
-  }
-  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
-  .btn-success {
-    background: linear-gradient(135deg, #11998e, #43e97b);
-    color: #fff;
-  }
-  .btn-success:hover { opacity: 0.88; }
-  .btn-outline {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--muted);
-  }
-  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-danger {
-    background: transparent;
-    border: 1px solid var(--danger);
-    color: var(--danger);
-    padding: 6px 14px;
-    font-size: 0.8rem;
-  }
-  .btn-danger:hover { background: var(--danger); color: #fff; }
-  .form-actions {
-    display: flex;
-    gap: 12px;
-    margin-top: 24px;
-    justify-content: flex-end;
-  }
-
-  /* 통계 */
-  .stats-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
-    margin-bottom: 24px;
-  }
-  .stat-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 18px;
-    text-align: center;
-  }
-  .stat-num {
-    font-size: 2rem;
-    font-weight: 700;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
-
-  /* 검색 */
-  .search-bar {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-  .search-bar input { flex: 1; }
-
-  /* 테이블 */
-  .table-wrap { overflow-x: auto; border-radius: 10px; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-  thead tr { background: var(--card); }
-  th {
-    padding: 12px 14px;
-    text-align: left;
-    color: var(--muted);
-    font-weight: 600;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    border-bottom: 1px solid var(--border);
-  }
-  td {
-    padding: 13px 14px;
-    border-bottom: 1px solid var(--border);
-    vertical-align: top;
-    line-height: 1.5;
-  }
-  tbody tr:hover { background: var(--card); transition: background 0.15s; }
-  tbody tr:last-child td { border-bottom: none; }
-  .badge {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    background: rgba(79,142,247,0.15);
-    color: var(--accent);
-  }
-
-  /* 토스트 */
-  #toast {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    background: var(--success);
-    color: #0a2a1a;
-    padding: 14px 22px;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 0.92rem;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.3s;
-    z-index: 999;
-    pointer-events: none;
-  }
-  #toast.show { opacity: 1; transform: translateY(0); }
-
-  /* 빈 상태 */
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--muted);
-  }
-  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
-
-  /* 상세보기 모달 */
-  .modal-overlay {
-    display: none;
+  body::before {
+    content: '';
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.7);
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
-  }
-  .modal-overlay.show { display: flex; }
-  .modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 32px;
-    width: 90%;
-    max-width: 600px;
-    max-height: 80vh;
-    overflow-y: auto;
-  }
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-  }
-  .modal-title { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
-  .modal-field { margin-bottom: 16px; }
-  .modal-field-label {
-    font-size: 0.78rem;
-    color: var(--muted);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 5px;
-  }
-  .modal-field-value {
-    background: var(--card);
-    border-radius: 8px;
-    padding: 12px;
-    font-size: 0.92rem;
-    line-height: 1.6;
-    white-space: pre-wrap;
+    background-image:
+      linear-gradient(rgba(0,87,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,87,255,0.025) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    z-index: 0;
   }
 
-  @media (max-width: 600px) {
-    .form-grid { grid-template-columns: 1fr; }
-    .stats-row { grid-template-columns: 1fr; }
-    header { padding: 14px 16px; }
-    main { padding: 20px 12px; }
-    .tabs { padding: 0 12px; }
-    .tab-btn { padding: 12px 16px; font-size: 0.85rem; }
-  }
+/* 헤더 */
+header {
+background: var(–surface);
+border-bottom: 1.5px solid var(–border);
+padding: 0 36px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+height: 64px;
+position: sticky;
+top: 0;
+z-index: 100;
+box-shadow: 0 2px 12px rgba(0,30,80,0.05);
+}
+.logo { display: flex; align-items: center; gap: 12px; }
+.logo-icon {
+width: 36px; height: 36px;
+background: var(–accent);
+border-radius: 9px;
+display: flex; align-items: center; justify-content: center;
+font-size: 1.1rem;
+box-shadow: 0 2px 8px rgba(0,87,255,0.28);
+}
+.logo-text { font-size: 1rem; font-weight: 700; color: var(–text); letter-spacing: -0.4px; }
+.logo-text span { color: var(–accent); }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.header-meta {
+font-size: 0.77rem;
+color: var(–muted);
+font-family: ‘DM Mono’, monospace;
+margin-right: 6px;
+}
+
+/* 탭 */
+.tabs {
+background: var(–surface);
+border-bottom: 1.5px solid var(–border);
+padding: 0 36px;
+display: flex;
+position: sticky;
+top: 64px;
+z-index: 90;
+}
+.tab-btn {
+padding: 0 24px;
+height: 48px;
+background: none;
+border: none;
+color: var(–muted);
+font-size: 0.88rem;
+font-weight: 600;
+cursor: pointer;
+border-bottom: 2.5px solid transparent;
+transition: all 0.16s;
+font-family: inherit;
+display: flex; align-items: center; gap: 7px;
+letter-spacing: -0.2px;
+}
+.tab-btn.active { color: var(–accent); border-bottom-color: var(–accent); }
+.tab-btn:hover:not(.active) { color: var(–text2); background: var(–surface2); }
+.tab-count {
+background: var(–accent-l);
+color: var(–accent);
+font-size: 0.72rem;
+font-weight: 700;
+padding: 2px 7px;
+border-radius: 20px;
+font-family: ‘DM Mono’, monospace;
+}
+
+/* 레이아웃 */
+main { max-width: 1000px; margin: 0 auto; padding: 32px 24px; position: relative; z-index: 1; }
+.panel { display: none; animation: fadeUp 0.2s ease; }
+.panel.active { display: block; }
+@keyframes fadeUp {
+from { opacity:0; transform:translateY(10px); }
+to   { opacity:1; transform:translateY(0); }
+}
+
+.section-header { margin-bottom: 20px; }
+.section-title  { font-size: 1.05rem; font-weight: 700; color: var(–text); letter-spacing: -0.3px; }
+.section-sub    { font-size: 0.82rem; color: var(–muted); margin-top: 3px; }
+
+/* 카드 */
+.card {
+background: var(–surface);
+border: 1.5px solid var(–border);
+border-radius: 14px;
+padding: 26px 30px;
+margin-bottom: 18px;
+box-shadow: var(–shadow);
+}
+.card-header {
+display: flex; align-items: center; gap: 10px;
+margin-bottom: 22px;
+padding-bottom: 14px;
+border-bottom: 1px solid var(–border);
+}
+.card-icon {
+width: 30px; height: 30px;
+background: var(–accent-l);
+border-radius: 7px;
+display: flex; align-items: center; justify-content: center;
+font-size: 0.9rem;
+}
+.card-title { font-size: 0.92rem; font-weight: 700; color: var(–text); }
+
+/* 폼 */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1 / -1; }
+label { font-size: 0.78rem; font-weight: 600; color: var(–text2); }
+.required::after { content: ’ *’; color: var(–danger); }
+input[type=“text”], input[type=“date”], input[type=“time”], textarea {
+background: var(–surface2);
+border: 1.5px solid var(–border);
+border-radius: 8px;
+color: var(–text);
+font-size: 0.92rem;
+padding: 10px 13px;
+font-family: inherit;
+transition: border-color 0.14s, box-shadow 0.14s, background 0.14s;
+outline: none;
+resize: vertical;
+width: 100%;
+}
+input:focus, textarea:focus {
+border-color: var(–accent);
+background: #fff;
+box-shadow: 0 0 0 3px rgba(0,87,255,0.09);
+}
+input::placeholder, textarea::placeholder { color: var(–muted); }
+textarea { min-height: 96px; line-height: 1.6; }
+
+/* 버튼 */
+.btn {
+padding: 9px 18px;
+border-radius: 8px;
+border: none;
+font-size: 0.87rem;
+font-weight: 600;
+cursor: pointer;
+transition: all 0.14s;
+font-family: inherit;
+display: inline-flex; align-items: center; gap: 6px;
+white-space: nowrap;
+}
+.btn-primary {
+background: var(–accent); color: #fff;
+box-shadow: 0 2px 8px rgba(0,87,255,0.22);
+}
+.btn-primary:hover { background: #0046d6; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,87,255,0.3); }
+.btn-success {
+background: var(–success); color: #fff;
+box-shadow: 0 2px 8px rgba(0,184,110,0.2);
+}
+.btn-success:hover { background: #009d5e; transform: translateY(-1px); }
+.btn-outline {
+background: var(–surface);
+border: 1.5px solid var(–border2);
+color: var(–text2);
+}
+.btn-outline:hover { border-color: var(–accent); color: var(–accent); background: var(–accent-l); }
+.btn-ghost {
+background: transparent; border: none; color: var(–muted);
+padding: 5px 10px;
+}
+.btn-ghost:hover { color: var(–danger); background: #fff0f3; border-radius: 6px; }
+.btn-sm { padding: 6px 13px; font-size: 0.81rem; border-radius: 7px; }
+.form-actions {
+display: flex; gap: 10px; margin-top: 22px;
+justify-content: flex-end;
+padding-top: 18px;
+border-top: 1px solid var(–border);
+}
+
+/* 통계 */
+.stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+.stat-card {
+background: var(–surface);
+border: 1.5px solid var(–border);
+border-radius: 12px;
+padding: 18px 20px;
+box-shadow: var(–shadow);
+display: flex; align-items: center; gap: 14px;
+transition: box-shadow 0.14s;
+}
+.stat-card:hover { box-shadow: var(–shadow-md); }
+.stat-icon {
+width: 42px; height: 42px;
+border-radius: 10px;
+display: flex; align-items: center; justify-content: center;
+font-size: 1.2rem; flex-shrink: 0;
+}
+.si-blue  { background: #e8eeff; }
+.si-green { background: #e6f9f1; }
+.si-teal  { background: #e6faf8; }
+.stat-num {
+font-size: 1.65rem; font-weight: 700;
+color: var(–text);
+font-family: ‘DM Mono’, monospace;
+letter-spacing: -1px; line-height: 1.1;
+}
+.stat-label { font-size: 0.77rem; color: var(–muted); margin-top: 2px; font-weight: 500; }
+
+/* 검색 */
+.search-bar { display: flex; gap: 10px; margin-bottom: 16px; align-items: center; }
+.search-wrap { flex: 1; position: relative; }
+.search-wrap input { padding-left: 36px; }
+.search-ico { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(–muted); font-size: 0.9rem; pointer-events: none; }
+
+/* 테이블 */
+.table-wrap { overflow-x: auto; border-radius: 10px; border: 1.5px solid var(–border); }
+table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+thead tr { background: var(–surface2); }
+th {
+padding: 11px 14px;
+text-align: left;
+color: var(–muted);
+font-weight: 600;
+font-size: 0.75rem;
+text-transform: uppercase;
+letter-spacing: 0.5px;
+border-bottom: 1.5px solid var(–border);
+white-space: nowrap;
+}
+td {
+padding: 12px 14px;
+border-bottom: 1px solid var(–border);
+vertical-align: middle;
+color: var(–text2);
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: #f4f7ff; transition: background 0.1s; }
+.td-main { color: var(–text); font-weight: 500; }
+.td-ellipsis { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.badge-no {
+display: inline-flex; align-items: center; justify-content: center;
+width: 26px; height: 26px;
+border-radius: 7px;
+background: var(–accent-l);
+color: var(–accent);
+font-size: 0.75rem; font-weight: 700;
+font-family: ‘DM Mono’, monospace;
+}
+.mono { font-family: ‘DM Mono’, monospace; font-size: 0.82rem; }
+
+/* 빈 상태 */
+.empty-state { text-align: center; padding: 56px 20px; color: var(–muted); }
+.empty-icon  { font-size: 2.6rem; margin-bottom: 12px; opacity: 0.45; }
+.empty-title { font-size: 0.93rem; font-weight: 600; color: var(–text2); margin-bottom: 5px; }
+.empty-sub   { font-size: 0.82rem; }
+
+/* 토스트 */
+#toast {
+position: fixed; bottom: 26px; right: 26px;
+padding: 12px 18px;
+border-radius: 10px;
+font-weight: 600; font-size: 0.87rem;
+opacity: 0; transform: translateY(14px);
+transition: all 0.24s cubic-bezier(0.34,1.56,0.64,1);
+z-index: 999; pointer-events: none;
+box-shadow: var(–shadow-md);
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+#toast.ok  { background: var(–success); color: #fff; }
+#toast.err { background: var(–danger);  color: #fff; }
+
+/* 모달 */
+.modal-overlay {
+display: none; position: fixed; inset: 0;
+background: rgba(10,20,40,0.4);
+backdrop-filter: blur(4px);
+z-index: 200; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+background: var(–surface);
+border: 1.5px solid var(–border);
+border-radius: 16px; padding: 30px;
+width: 100%; max-width: 580px; max-height: 85vh; overflow-y: auto;
+box-shadow: var(–shadow-md);
+animation: fadeUp 0.18s ease;
+}
+.modal-header {
+display: flex; justify-content: space-between; align-items: flex-start;
+margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(–border);
+}
+.modal-title { font-size: 1rem; font-weight: 700; color: var(–text); }
+.modal-date  { font-size: 0.79rem; color: var(–muted); font-family: ‘DM Mono’, monospace; margin-top: 3px; }
+.modal-field { margin-bottom: 14px; }
+.modal-label { font-size: 0.74rem; color: var(–muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.modal-value {
+background: var(–surface2); border: 1px solid var(–border);
+border-radius: 8px; padding: 12px 14px;
+font-size: 0.9rem; line-height: 1.65; white-space: pre-wrap; color: var(–text2);
+}
+.modal-value.hl { border-left: 3px solid var(–accent); background: var(–accent-l); color: var(–text); }
+
+@media (max-width: 640px) {
+.form-grid { grid-template-columns: 1fr; }
+.stats-row { grid-template-columns: 1fr; }
+header     { padding: 0 16px; }
+.tabs      { padding: 0 12px; }
+main       { padding: 18px 12px; }
+.card      { padding: 18px 16px; }
+.header-meta { display: none; }
+}
 </style>
+
 </head>
 <body>
 
 <header>
-  <h1>📋 회의록 관리 시스템</h1>
-  <div class="header-btns">
-    <button class="btn btn-outline" onclick="importExcel()">📂 불러오기</button>
-    <button class="btn btn-success" onclick="exportExcel()">💾 Excel 저장</button>
+  <div class="logo">
+    <div class="logo-icon">📋</div>
+    <div class="logo-text">Meeting <span>Minutes</span></div>
+  </div>
+  <div class="header-right">
+    <span class="header-meta" id="header-date"></span>
+    <button class="btn btn-outline btn-sm" onclick="importExcel()">📂 불러오기</button>
+    <button class="btn btn-success btn-sm" onclick="exportExcel()">💾 Excel 저장</button>
     <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="handleFileImport(event)"/>
   </div>
 </header>
 
 <div class="tabs">
-  <button class="tab-btn active" onclick="switchTab('write')">✏️ 회의록 작성</button>
-  <button class="tab-btn" onclick="switchTab('history')">📁 이력 조회</button>
+  <button class="tab-btn active" onclick="switchTab('write', this)">✏️ 회의록 작성</button>
+  <button class="tab-btn" onclick="switchTab('history', this)">
+    📁 이력 조회 <span class="tab-count" id="tab-count">0</span>
+  </button>
 </div>
 
 <main>
+
   <!-- 작성 탭 -->
+
   <div class="panel active" id="panel-write">
-    <div class="card">
-      <div class="card-title">📝 새 회의록 작성</div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>날짜</label>
-          <input type="date" id="f-date"/>
-        </div>
-        <div class="form-group">
-          <label>시간</label>
-          <input type="time" id="f-time"/>
-        </div>
-        <div class="form-group full">
-          <label>안건 / 주제</label>
-          <input type="text" id="f-agenda" placeholder="회의 안건 또는 주제를 입력하세요"/>
-        </div>
-        <div class="form-group full">
-          <label>회의 내용 (세부)</label>
-          <textarea id="f-content" placeholder="회의에서 논의된 세부 내용을 입력하세요"></textarea>
-        </div>
-        <div class="form-group full">
-          <label>결정사항 / 액션아이템</label>
-          <textarea id="f-action" placeholder="결정된 사항 및 담당자별 액션아이템을 입력하세요"></textarea>
-        </div>
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-outline" onclick="clearForm()">🗑️ 초기화</button>
-        <button class="btn btn-primary" onclick="saveMeeting()">✅ 저장</button>
-      </div>
+    <div class="section-header">
+      <div class="section-title">새 회의록 작성</div>
+      <div class="section-sub">저장하면 브라우저에 자동 누적됩니다 · 중요 내용은 Excel 저장으로 백업하세요</div>
     </div>
+
+```
+<div class="card">
+  <div class="card-header">
+    <div class="card-icon">🗓</div>
+    <div class="card-title">기본 정보</div>
+  </div>
+  <div class="form-grid">
+    <div class="form-group">
+      <label class="required">날짜</label>
+      <input type="date" id="f-date"/>
+    </div>
+    <div class="form-group">
+      <label>시간</label>
+      <input type="time" id="f-time"/>
+    </div>
+    <div class="form-group full">
+      <label class="required">안건 / 주제</label>
+      <input type="text" id="f-agenda" placeholder="회의 안건 또는 주제를 입력하세요"/>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-icon">📝</div>
+    <div class="card-title">회의 내용</div>
+  </div>
+  <div class="form-grid">
+    <div class="form-group full">
+      <label>회의 내용 (세부)</label>
+      <textarea id="f-content" placeholder="회의에서 논의된 세부 내용을 자유롭게 입력하세요" style="min-height:120px"></textarea>
+    </div>
+    <div class="form-group full">
+      <label>결정사항 / 액션아이템</label>
+      <textarea id="f-action" placeholder="결정된 사항, 담당자별 액션아이템, 다음 회의 일정 등을 입력하세요"></textarea>
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-outline" onclick="clearForm()">↺ 초기화</button>
+    <button class="btn btn-primary" onclick="saveMeeting()">✓ 저장하기</button>
+  </div>
+</div>
+```
+
   </div>
 
   <!-- 이력 탭 -->
+
   <div class="panel" id="panel-history">
     <div class="stats-row">
       <div class="stat-card">
-        <div class="stat-num" id="stat-total">0</div>
-        <div class="stat-label">전체 회의록</div>
+        <div class="stat-icon si-blue">📋</div>
+        <div>
+          <div class="stat-num" id="stat-total">0</div>
+          <div class="stat-label">전체 회의록</div>
+        </div>
       </div>
       <div class="stat-card">
-        <div class="stat-num" id="stat-month">0</div>
-        <div class="stat-label">이번 달</div>
+        <div class="stat-icon si-green">📅</div>
+        <div>
+          <div class="stat-num" id="stat-month">0</div>
+          <div class="stat-label">이번 달</div>
+        </div>
       </div>
       <div class="stat-card">
-        <div class="stat-num" id="stat-recent">-</div>
-        <div class="stat-label">최근 회의일</div>
+        <div class="stat-icon si-teal">🕐</div>
+        <div>
+          <div class="stat-num" id="stat-recent" style="font-size:1.05rem;letter-spacing:-0.5px">—</div>
+          <div class="stat-label">최근 회의일</div>
+        </div>
       </div>
     </div>
 
-    <div class="card">
-      <div class="search-bar">
-        <input type="text" id="search-input" placeholder="🔍 안건, 내용, 결정사항 검색..." oninput="renderTable()"/>
-        <button class="btn btn-outline" onclick="document.getElementById('search-input').value=''; renderTable()">초기화</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>날짜</th>
-              <th>시간</th>
-              <th>안건/주제</th>
-              <th>결정사항</th>
-              <th>상세</th>
-              <th>삭제</th>
-            </tr>
-          </thead>
-          <tbody id="table-body"></tbody>
-        </table>
-      </div>
-      <div id="empty-state" class="empty-state" style="display:none">
-        <div class="icon">📭</div>
-        <div>저장된 회의록이 없습니다</div>
-        <div style="font-size:0.85rem; margin-top:8px">회의록 작성 탭에서 새 회의록을 추가하세요</div>
-      </div>
+```
+<div class="card" style="padding:22px 26px">
+  <div class="search-bar">
+    <div class="search-wrap">
+      <span class="search-ico">🔍</span>
+      <input type="text" id="search-input" placeholder="안건, 회의내용, 결정사항 검색..." oninput="renderTable()"/>
     </div>
+    <button class="btn btn-outline btn-sm" onclick="document.getElementById('search-input').value='';renderTable()">초기화</button>
   </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:46px">No</th>
+          <th>날짜</th>
+          <th>시간</th>
+          <th>안건 / 주제</th>
+          <th>결정사항</th>
+          <th style="width:68px">상세</th>
+          <th style="width:52px">삭제</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+  <div id="empty-state" class="empty-state" style="display:none">
+    <div class="empty-icon">📭</div>
+    <div class="empty-title">저장된 회의록이 없습니다</div>
+    <div class="empty-sub">회의록 작성 탭에서 새 회의록을 추가해 보세요</div>
+  </div>
+</div>
+```
+
+  </div>
+
 </main>
 
-<!-- 상세보기 모달 -->
+<!-- 모달 -->
+
 <div class="modal-overlay" id="modal" onclick="closeModal(event)">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">📋 회의록 상세보기</div>
-      <button class="btn btn-outline" onclick="document.getElementById('modal').classList.remove('show')">✕ 닫기</button>
+      <div>
+        <div class="modal-title" id="modal-title"></div>
+        <div class="modal-date"  id="modal-date"></div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('modal').classList.remove('show')">✕ 닫기</button>
     </div>
     <div id="modal-content"></div>
   </div>
@@ -433,127 +517,111 @@
 <div id="toast"></div>
 
 <script>
-  // ─── 데이터 관리 ───────────────────────────────
   let meetings = [];
 
+  function init() {
+    loadData();
+    clearForm();
+    updateTabCount();
+    updateHeaderDate();
+    setInterval(updateHeaderDate, 30000);
+  }
+
+  function updateHeaderDate() {
+    const now = new Date();
+    document.getElementById('header-date').textContent =
+      now.toLocaleDateString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit'}) + '  ' +
+      now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+  }
+
   function loadData() {
-    const saved = localStorage.getItem('meeting_minutes');
-    meetings = saved ? JSON.parse(saved) : [];
+    try { meetings = JSON.parse(localStorage.getItem('meeting_minutes') || '[]'); }
+    catch(e) { meetings = []; }
   }
+  function saveData() { localStorage.setItem('meeting_minutes', JSON.stringify(meetings)); }
 
-  function saveData() {
-    localStorage.setItem('meeting_minutes', JSON.stringify(meetings));
-  }
-
-  // ─── 탭 전환 ───────────────────────────────────
-  function switchTab(tab) {
+  function switchTab(tab, el) {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('panel-' + tab).classList.add('active');
-    event.target.classList.add('active');
+    el.classList.add('active');
     if (tab === 'history') { updateStats(); renderTable(); }
   }
 
-  // ─── 회의록 저장 ────────────────────────────────
+  function updateTabCount() {
+    document.getElementById('tab-count').textContent = meetings.length;
+  }
+
   function saveMeeting() {
     const date    = document.getElementById('f-date').value;
     const time    = document.getElementById('f-time').value;
     const agenda  = document.getElementById('f-agenda').value.trim();
     const content = document.getElementById('f-content').value.trim();
     const action  = document.getElementById('f-action').value.trim();
-
-    if (!date || !agenda) {
-      showToast('⚠️ 날짜와 안건은 필수입니다', '#f7576a');
-      return;
-    }
-
-    const record = {
-      id: Date.now(),
-      date, time, agenda, content, action,
-      createdAt: new Date().toISOString()
-    };
-
-    meetings.unshift(record);
+    if (!date || !agenda) { showToast('날짜와 안건은 필수 항목입니다', 'err'); return; }
+    meetings.unshift({ id: Date.now(), date, time, agenda, content, action, createdAt: new Date().toISOString() });
     saveData();
+    updateTabCount();
     clearForm();
-    showToast('✅ 회의록이 저장되었습니다');
+    showToast('회의록이 저장되었습니다', 'ok');
   }
 
-  // ─── 폼 초기화 ─────────────────────────────────
   function clearForm() {
-    ['f-date','f-time','f-agenda','f-content','f-action'].forEach(id => {
-      document.getElementById(id).value = '';
-    });
-    // 오늘 날짜 / 현재 시간 기본값
+    ['f-agenda','f-content','f-action'].forEach(id => document.getElementById(id).value = '');
     const now = new Date();
     document.getElementById('f-date').value = now.toISOString().split('T')[0];
     document.getElementById('f-time').value = now.toTimeString().slice(0,5);
   }
 
-  // ─── 테이블 렌더링 ──────────────────────────────
   function renderTable() {
-    const keyword = document.getElementById('search-input').value.toLowerCase();
+    const kw = document.getElementById('search-input').value.toLowerCase();
     const filtered = meetings.filter(m =>
-      m.agenda.toLowerCase().includes(keyword) ||
-      m.content.toLowerCase().includes(keyword) ||
-      m.action.toLowerCase().includes(keyword)
+      m.agenda.toLowerCase().includes(kw) ||
+      (m.content||'').toLowerCase().includes(kw) ||
+      (m.action||'').toLowerCase().includes(kw)
     );
-
     const tbody = document.getElementById('table-body');
     const empty = document.getElementById('empty-state');
-
-    if (filtered.length === 0) {
-      tbody.innerHTML = '';
-      empty.style.display = 'block';
-      return;
-    }
+    if (filtered.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
     empty.style.display = 'none';
-
-    tbody.innerHTML = filtered.map((m, i) => `
+    tbody.innerHTML = filtered.map((m,i) => `
       <tr>
-        <td><span class="badge">${filtered.length - i}</span></td>
-        <td>${m.date}</td>
-        <td>${m.time || '-'}</td>
-        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.agenda}</td>
-        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">${m.action || '-'}</td>
-        <td><button class="btn btn-outline" style="padding:6px 12px;font-size:0.8rem" onclick="showDetail(${m.id})">👁 보기</button></td>
-        <td><button class="btn btn-danger" onclick="deleteMeeting(${m.id})">삭제</button></td>
+        <td><span class="badge-no">${filtered.length - i}</span></td>
+        <td><span class="mono">${m.date}</span></td>
+        <td><span class="mono" style="color:var(--muted)">${m.time||'—'}</span></td>
+        <td class="td-main td-ellipsis">${m.agenda}</td>
+        <td class="td-ellipsis" style="color:var(--muted)">${m.action||'—'}</td>
+        <td><button class="btn btn-outline btn-sm" onclick="showDetail(${m.id})">보기</button></td>
+        <td><button class="btn btn-ghost" onclick="deleteMeeting(${m.id})" title="삭제">✕</button></td>
       </tr>
     `).join('');
   }
 
-  // ─── 통계 업데이트 ──────────────────────────────
   function updateStats() {
     const now = new Date();
-    const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-    const monthCount = meetings.filter(m => m.date.startsWith(thisMonth)).length;
-    const recent = meetings.length > 0 ? meetings[0].date : '-';
-
-    document.getElementById('stat-total').textContent = meetings.length;
-    document.getElementById('stat-month').textContent = monthCount;
-    document.getElementById('stat-recent').textContent = recent;
+    const ym  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    document.getElementById('stat-total').textContent  = meetings.length;
+    document.getElementById('stat-month').textContent  = meetings.filter(m => m.date.startsWith(ym)).length;
+    document.getElementById('stat-recent').textContent = meetings.length > 0 ? meetings[0].date : '—';
   }
 
-  // ─── 상세보기 ───────────────────────────────────
   function showDetail(id) {
     const m = meetings.find(x => x.id === id);
     if (!m) return;
+    document.getElementById('modal-title').textContent = m.agenda;
+    document.getElementById('modal-date').textContent  = `${m.date}  ${m.time||''}`;
     document.getElementById('modal-content').innerHTML = `
       <div class="modal-field">
-        <div class="modal-field-label">날짜 / 시간</div>
-        <div class="modal-field-value">${m.date} ${m.time || ''}</div>
+        <div class="modal-label">안건 / 주제</div>
+        <div class="modal-value hl">${m.agenda}</div>
       </div>
       <div class="modal-field">
-        <div class="modal-field-label">안건 / 주제</div>
-        <div class="modal-field-value">${m.agenda}</div>
+        <div class="modal-label">회의 내용 (세부)</div>
+        <div class="modal-value">${m.content||'내용 없음'}</div>
       </div>
       <div class="modal-field">
-        <div class="modal-field-label">회의 내용 (세부)</div>
-        <div class="modal-field-value">${m.content || '내용 없음'}</div>
-      </div>
-      <div class="modal-field">
-        <div class="modal-field-label">결정사항 / 액션아이템</div>
-        <div class="modal-field-value">${m.action || '내용 없음'}</div>
+        <div class="modal-label">결정사항 / 액션아이템</div>
+        <div class="modal-value">${m.action||'내용 없음'}</div>
       </div>
     `;
     document.getElementById('modal').classList.add('show');
@@ -564,97 +632,73 @@
       document.getElementById('modal').classList.remove('show');
   }
 
-  // ─── 삭제 ───────────────────────────────────────
   function deleteMeeting(id) {
     if (!confirm('이 회의록을 삭제하시겠습니까?')) return;
     meetings = meetings.filter(m => m.id !== id);
-    saveData();
-    updateStats();
-    renderTable();
-    showToast('🗑️ 삭제되었습니다', '#f7576a');
+    saveData(); updateTabCount(); updateStats(); renderTable();
+    showToast('삭제되었습니다', 'err');
   }
 
-  // ─── Excel 내보내기 ─────────────────────────────
   function exportExcel() {
-    if (meetings.length === 0) {
-      showToast('⚠️ 저장된 회의록이 없습니다', '#f7576a');
-      return;
-    }
-    const data = meetings.map((m, i) => ({
-      'No': i + 1,
-      '날짜': m.date,
-      '시간': m.time || '',
-      '안건/주제': m.agenda,
-      '회의내용(세부)': m.content || '',
-      '결정사항/액션아이템': m.action || '',
-      '작성일시': new Date(m.createdAt).toLocaleString('ko-KR')
+    if (meetings.length === 0) { showToast('저장된 회의록이 없습니다', 'err'); return; }
+    if (typeof XLSX === 'undefined') { showToast('라이브러리 로딩 중입니다', 'err'); return; }
+    const data = [...meetings].reverse().map((m,i) => ({
+      'No'                  : i+1,
+      '날짜'                : m.date,
+      '시간'                : m.time||'',
+      '안건/주제'           : m.agenda,
+      '회의내용(세부)'      : m.content||'',
+      '결정사항/액션아이템' : m.action||'',
+      '작성일시'            : new Date(m.createdAt).toLocaleString('ko-KR')
     }));
-
     const ws = XLSX.utils.json_to_sheet(data);
-    ws['!cols'] = [
-      {wch:6}, {wch:12}, {wch:8}, {wch:30},
-      {wch:40}, {wch:40}, {wch:20}
-    ];
+    ws['!cols'] = [{wch:5},{wch:12},{wch:8},{wch:32},{wch:44},{wch:44},{wch:22}];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, '회의록');
-
-    const today = new Date().toISOString().split('T')[0];
-    XLSX.writeFile(wb, `회의록_${today}.xlsx`);
-    showToast('💾 Excel 파일이 저장되었습니다');
+    XLSX.writeFile(wb, '회의록.xlsx');
+    showToast('회의록.xlsx 저장 완료', 'ok');
   }
 
-  // ─── Excel 불러오기 ─────────────────────────────
-  function importExcel() {
-    document.getElementById('fileInput').click();
-  }
+  function importExcel() { document.getElementById('fileInput').click(); }
 
   function handleFileImport(event) {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = function(e) {
-      const wb = XLSX.read(e.target.result, { type: 'binary' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws);
-
-      const imported = rows.map(row => ({
-        id: Date.now() + Math.random(),
-        date: row['날짜'] || '',
-        time: row['시간'] || '',
-        agenda: row['안건/주제'] || '',
-        content: row['회의내용(세부)'] || '',
-        action: row['결정사항/액션아이템'] || '',
-        createdAt: row['작성일시'] || new Date().toISOString()
-      }));
-
-      // 중복 제거 후 병합 (날짜+안건 기준)
-      const existingKeys = new Set(meetings.map(m => m.date + m.agenda));
-      const newItems = imported.filter(m => !existingKeys.has(m.date + m.agenda));
-
-      meetings = [...newItems, ...meetings];
-      meetings.sort((a,b) => new Date(b.date) - new Date(a.date));
-      saveData();
-      updateStats();
-      renderTable();
-      showToast(`📂 ${newItems.length}건 불러왔습니다`);
+      try {
+        const wb   = XLSX.read(e.target.result, { type:'binary' });
+        const ws   = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws);
+        const imported = rows.map(row => ({
+          id: Date.now() + Math.random(),
+          date: String(row['날짜']||''), time: String(row['시간']||''),
+          agenda: row['안건/주제']||'', content: row['회의내용(세부)']||'',
+          action: row['결정사항/액션아이템']||'',
+          createdAt: row['작성일시']||new Date().toISOString()
+        }));
+        const keys = new Set(meetings.map(m => m.date+'|'+m.agenda));
+        const newItems = imported.filter(m => !keys.has(m.date+'|'+m.agenda));
+        meetings = [...newItems, ...meetings];
+        meetings.sort((a,b) => new Date(b.date) - new Date(a.date));
+        saveData(); updateTabCount();
+        showToast(`${newItems.length}건 불러왔습니다`, 'ok');
+      } catch(err) { showToast('파일 읽기 오류', 'err'); }
     };
     reader.readAsBinaryString(file);
     event.target.value = '';
   }
 
-  // ─── 토스트 알림 ────────────────────────────────
-  function showToast(msg, color) {
+  function showToast(msg, type) {
     const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.style.background = color || 'var(--success)';
-    t.style.color = color ? '#fff' : '#0a2a1a';
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2800);
+    t.textContent = (type==='ok' ? '✓  ' : '✕  ') + msg;
+    t.className = `show ${type}`;
+    clearTimeout(t._t);
+    t._t = setTimeout(() => t.className = '', 2800);
   }
 
-  // ─── 초기화 ─────────────────────────────────────
-  loadData();
-  clearForm();
+  init();
 </script>
+
 </body>
 </html>
