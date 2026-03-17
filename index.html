@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>회의록 관리 시스템</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --card: #21253a;
+    --border: #2e3350;
+    --accent: #4f8ef7;
+    --accent2: #7c3aed;
+    --text: #e8eaf6;
+    --muted: #8892b0;
+    --success: #43e97b;
+    --danger: #f7576a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* 헤더 */
+  header {
+    background: linear-gradient(135deg, #1a1d27 0%, #21253a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header h1 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+  .header-btns { display: flex; gap: 10px; }
+
+  /* 탭 */
+  .tabs {
+    display: flex;
+    gap: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+  }
+  .tab-btn {
+    padding: 14px 28px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .tab-btn:hover { color: var(--text); }
+
+  /* 메인 레이아웃 */
+  main { max-width: 960px; margin: 0 auto; padding: 32px 20px; }
+
+  /* 탭 패널 */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* 카드 */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+  .card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* 폼 */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 7px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  input, textarea, select {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.95rem;
+    padding: 11px 14px;
+    font-family: inherit;
+    transition: border-color 0.2s;
+    outline: none;
+    resize: vertical;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+  }
+  textarea { min-height: 100px; }
+
+  /* 버튼 */
+  .btn {
+    padding: 11px 22px;
+    border-radius: 8px;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+  }
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-success {
+    background: linear-gradient(135deg, #11998e, #43e97b);
+    color: #fff;
+  }
+  .btn-success:hover { opacity: 0.88; }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger {
+    background: transparent;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    padding: 6px 14px;
+    font-size: 0.8rem;
+  }
+  .btn-danger:hover { background: var(--danger); color: #fff; }
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    justify-content: flex-end;
+  }
+
+  /* 통계 */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    text-align: center;
+  }
+  .stat-num {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+
+  /* 검색 */
+  .search-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .search-bar input { flex: 1; }
+
+  /* 테이블 */
+  .table-wrap { overflow-x: auto; border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  thead tr { background: var(--card); }
+  th {
+    padding: 12px 14px;
+    text-align: left;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 13px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  tbody tr:hover { background: var(--card); transition: background 0.15s; }
+  tbody tr:last-child td { border-bottom: none; }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(79,142,247,0.15);
+    color: var(--accent);
+  }
+
+  /* 토스트 */
+  #toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: var(--success);
+    color: #0a2a1a;
+    padding: 14px 22px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.92rem;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s;
+    z-index: 999;
+    pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+
+  /* 빈 상태 */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+
+  /* 상세보기 모달 */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .modal-title { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+  .modal-field { margin-bottom: 16px; }
+  .modal-field-label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+  }
+  .modal-field-value {
+    background: var(--card);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: 1fr; }
+    header { padding: 14px 16px; }
+    main { padding: 20px 12px; }
+    .tabs { padding: 0 12px; }
+    .tab-btn { padding: 12px 16px; font-size: 0.85rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📋 회의록 관리 시스템</h1>
+  <div class="header-btns">
+    <button class="btn btn-outline" onclick="importExcel()">📂 불러오기</button>
+    <button class="btn btn-success" onclick="exportExcel()">💾 Excel 저장</button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="handleFileImport(event)"/>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('write')">✏️ 회의록 작성</button>
+  <button class="tab-btn" onclick="switchTab('history')">📁 이력 조회</button>
+</div>
+
+<main>
+  <!-- 작성 탭 -->
+  <div class="panel active" id="panel-write">
+    <div class="card">
+      <div class="card-title">📝 새 회의록 작성</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>날짜</label>
+          <input type="date" id="f-date"/>
+        </div>
+        <div class="form-group">
+          <label>시간</label>
+          <input type="time" id="f-time"/>
+        </div>
+        <div class="form-group full">
+          <label>안건 / 주제</label>
+          <input type="text" id="f-agenda" placeholder="회의 안건 또는 주제를 입력하세요"/>
+        </div>
+        <div class="form-group full">
+          <label>회의 내용 (세부)</label>
+          <textarea id="f-content" placeholder="회의에서 논의된 세부 내용을 입력하세요"></textarea>
+        </div>
+        <div class="form-group full">
+          <label>결정사항 / 액션아이템</label>
+          <textarea id="f-action" placeholder="결정된 사항 및 담당자별 액션아이템을 입력하세요"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-outline" onclick="clearForm()">🗑️ 초기화</button>
+        <button class="btn btn-primary" onclick="saveMeeting()">✅ 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 이력 탭 -->
+  <div class="panel" id="panel-history">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-total">0</div>
+        <div class="stat-label">전체 회의록</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-month">0</div>
+        <div class="stat-label">이번 달</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-recent">-</div>
+        <div class="stat-label">최근 회의일</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="🔍 안건, 내용, 결정사항 검색..." oninput="renderTable()"/>
+        <button class="btn btn-outline" onclick="document.getElementById('search-input').value=''; renderTable()">초기화</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>날짜</th>
+              <th>시간</th>
+              <th>안건/주제</th>
+              <th>결정사항</th>
+              <th>상세</th>
+              <th>삭제</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+      <div id="empty-state" class="empty-state" style="display:none">
+        <div class="icon">📭</div>
+        <div>저장된 회의록이 없습니다</div>
+        <div style="font-size:0.85rem; margin-top:8px">회의록 작성 탭에서 새 회의록을 추가하세요</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 상세보기 모달 -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📋 회의록 상세보기</div>
+      <button class="btn btn-outline" onclick="document.getElementById('modal').classList.remove('show')">✕ 닫기</button>
+    </div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ─── 데이터 관리 ───────────────────────────────
+  let meetings = [];
+
+  function loadData() {
+    const saved = localStorage.getItem('meeting_minutes');
+    meetings = saved ? JSON.parse(saved) : [];
+  }
+
+  function saveData() {
+    localStorage.setItem('meeting_minutes', JSON.stringify(meetings));
+  }
+
+  // ─── 탭 전환 ───────────────────────────────────
+  function switchTab(tab) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + tab).classList.add('active');
+    event.target.classList.add('active');
+    if (tab === 'history') { updateStats(); renderTable(); }
+  }
+
+  // ─── 회의록 저장 ────────────────────────────────
+  function saveMeeting() {
+    const date    = document.getElementById('f-date').value;
+    const time    = document.getElementById('f-time').value;
+    const agenda  = document.getElementById('f-agenda').value.trim();
+    const content = document.getElementById('f-content').value.trim();
+    const action  = document.getElementById('f-action').value.trim();
+
+    if (!date || !agenda) {
+      showToast('⚠️ 날짜와 안건은 필수입니다', '#f7576a');
+      return;
+    }
+
+    const record = {
+      id: Date.now(),
+      date, time, agenda, content, action,
+      createdAt: new Date().toISOString()
+    };
+
+    meetings.unshift(record);
+    saveData();
+    clearForm();
+    showToast('✅ 회의록이 저장되었습니다');
+  }
+
+  // ─── 폼 초기화 ─────────────────────────────────
+  function clearForm() {
+    ['f-date','f-time','f-agenda','f-content','f-action'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    // 오늘 날짜 / 현재 시간 기본값
+    const now = new Date();
+    document.getElementById('f-date').value = now.toISOString().split('T')[0];
+    document.getElementById('f-time').value = now.toTimeString().slice(0,5);
+  }
+
+  // ─── 테이블 렌더링 ──────────────────────────────
+  function renderTable() {
+    const keyword = document.getElementById('search-input').value.toLowerCase();
+    const filtered = meetings.filter(m =>
+      m.agenda.toLowerCase().includes(keyword) ||
+      m.content.toLowerCase().includes(keyword) ||
+      m.action.toLowerCase().includes(keyword)
+    );
+
+    const tbody = document.getElementById('table-body');
+    const empty = document.getElementById('empty-state');
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    tbody.innerHTML = filtered.map((m, i) => `
+      <tr>
+        <td><span class="badge">${filtered.length - i}</span></td>
+        <td>${m.date}</td>
+        <td>${m.time || '-'}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.agenda}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">${m.action || '-'}</td>
+        <td><button class="btn btn-outline" style="padding:6px 12px;font-size:0.8rem" onclick="showDetail(${m.id})">👁 보기</button></td>
+        <td><button class="btn btn-danger" onclick="deleteMeeting(${m.id})">삭제</button></td>
+      </tr>
+    `).join('');
+  }
+
+  // ─── 통계 업데이트 ──────────────────────────────
+  function updateStats() {
+    const now = new Date();
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const monthCount = meetings.filter(m => m.date.startsWith(thisMonth)).length;
+    const recent = meetings.length > 0 ? meetings[0].date : '-';
+
+    document.getElementById('stat-total').textContent = meetings.length;
+    document.getElementById('stat-month').textContent = monthCount;
+    document.getElementById('stat-recent').textContent = recent;
+  }
+
+  // ─── 상세보기 ───────────────────────────────────
+  function showDetail(id) {
+    const m = meetings.find(x => x.id === id);
+    if (!m) return;
+    document.getElementById('modal-content').innerHTML = `
+      <div class="modal-field">
+        <div class="modal-field-label">날짜 / 시간</div>
+        <div class="modal-field-value">${m.date} ${m.time || ''}</div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">안건 / 주제</div>
+        <div class="modal-field-value">${m.agenda}</div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">회의 내용 (세부)</div>
+        <div class="modal-field-value">${m.content || '내용 없음'}</div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">결정사항 / 액션아이템</div>
+        <div class="modal-field-value">${m.action || '내용 없음'}</div>
+      </div>
+    `;
+    document.getElementById('modal').classList.add('show');
+  }
+
+  function closeModal(e) {
+    if (e.target === document.getElementById('modal'))
+      document.getElementById('modal').classList.remove('show');
+  }
+
+  // ─── 삭제 ───────────────────────────────────────
+  function deleteMeeting(id) {
+    if (!confirm('이 회의록을 삭제하시겠습니까?')) return;
+    meetings = meetings.filter(m => m.id !== id);
+    saveData();
+    updateStats();
+    renderTable();
+    showToast('🗑️ 삭제되었습니다', '#f7576a');
+  }
+
+  // ─── Excel 내보내기 ─────────────────────────────
+  function exportExcel() {
+    if (meetings.length === 0) {
+      showToast('⚠️ 저장된 회의록이 없습니다', '#f7576a');
+      return;
+    }
+    const data = meetings.map((m, i) => ({
+      'No': i + 1,
+      '날짜': m.date,
+      '시간': m.time || '',
+      '안건/주제': m.agenda,
+      '회의내용(세부)': m.content || '',
+      '결정사항/액션아이템': m.action || '',
+      '작성일시': new Date(m.createdAt).toLocaleString('ko-KR')
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws['!cols'] = [
+      {wch:6}, {wch:12}, {wch:8}, {wch:30},
+      {wch:40}, {wch:40}, {wch:20}
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '회의록');
+
+    const today = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `회의록_${today}.xlsx`);
+    showToast('💾 Excel 파일이 저장되었습니다');
+  }
+
+  // ─── Excel 불러오기 ─────────────────────────────
+  function importExcel() {
+    document.getElementById('fileInput').click();
+  }
+
+  function handleFileImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const wb = XLSX.read(e.target.result, { type: 'binary' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws);
+
+      const imported = rows.map(row => ({
+        id: Date.now() + Math.random(),
+        date: row['날짜'] || '',
+        time: row['시간'] || '',
+        agenda: row['안건/주제'] || '',
+        content: row['회의내용(세부)'] || '',
+        action: row['결정사항/액션아이템'] || '',
+        createdAt: row['작성일시'] || new Date().toISOString()
+      }));
+
+      // 중복 제거 후 병합 (날짜+안건 기준)
+      const existingKeys = new Set(meetings.map(m => m.date + m.agenda));
+      const newItems = imported.filter(m => !existingKeys.has(m.date + m.agenda));
+
+      meetings = [...newItems, ...meetings];
+      meetings.sort((a,b) => new Date(b.date) - new Date(a.date));
+      saveData();
+      updateStats();
+      renderTable();
+      showToast(`📂 ${newItems.length}건 불러왔습니다`);
+    };
+    reader.readAsBinaryString(file);
+    event.target.value = '';
+  }
+
+  // ─── 토스트 알림 ────────────────────────────────
+  function showToast(msg, color) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = color || 'var(--success)';
+    t.style.color = color ? '#fff' : '#0a2a1a';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // ─── 초기화 ─────────────────────────────────────
+  loadData();
+  clearForm();
+</script>
+</body>
+</html>
