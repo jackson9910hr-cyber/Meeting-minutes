@@ -1,502 +1,465 @@
 <!DOCTYPE html>
-
 <html lang="ko">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>회의록 관리 시스템</title>
+<title>Meeting Minutes — 회의록 관리</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
-    --bg:        #1e1b18;
-    --surface:   #272320;
-    --card:      #2f2b28;
-    --border:    #3d3830;
-    --accent:    #e8a455;
-    --accent2:   #d4845a;
-    --accent-l:  rgba(232,164,85,0.13);
-    --text:      #f2ede8;
-    --muted:     #9c9189;
-    --success:   #6dbf8a;
-    --danger:    #e07070;
-    --shadow:    0 2px 8px rgba(0,0,0,0.25);
-    --shadow-md: 0 6px 24px rgba(0,0,0,0.35);
+    --bg:            #0b0c0f;
+    --surface:       #121417;
+    --surface-2:     #16181c;
+    --surface-3:     #1b1e23;
+    --border:        rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.16);
+    --text:          #eef0f2;
+    --text-2:        #8a909a;
+    --text-3:        #565b64;
+    --accent:        #c7a25f;
+    --accent-dim:    rgba(199,162,95,0.13);
+    --success:       #6fae82;
+    --success-dim:   rgba(111,174,130,0.13);
+    --danger:        #d97a6c;
+    --danger-dim:    rgba(217,122,108,0.13);
+    --shadow-sm:     0 1px 2px rgba(0,0,0,0.5);
+    --shadow-md:     0 20px 48px rgba(0,0,0,0.5);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
   body {
-    font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.1px;
   }
 
-/* 헤더 */
-header {
-background: var(–surface);
-border-bottom: 1px solid var(–border);
-padding: 0 36px;
-display: flex;
-align-items: center;
-justify-content: space-between;
-height: 62px;
-position: sticky;
-top: 0;
-z-index: 100;
-box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-}
-.logo { display: flex; align-items: center; gap: 12px; }
-.logo-icon {
-width: 36px; height: 36px;
-background: linear-gradient(135deg, var(–accent), var(–accent2));
-border-radius: 9px;
-display: flex; align-items: center; justify-content: center;
-font-size: 1.1rem;
-box-shadow: 0 2px 8px rgba(232,164,85,0.35);
-}
-.logo-text {
-font-size: 1.05rem;
-font-weight: 700;
-color: var(–text);
-letter-spacing: -0.4px;
-}
-.logo-text span { color: var(–accent); }
-.header-right { display: flex; align-items: center; gap: 10px; }
-.header-meta {
-font-size: 0.77rem;
-color: var(–muted);
-margin-right: 8px;
-font-variant-numeric: tabular-nums;
-}
+  /* 헤더 */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 68px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand-mark {
+    width: 34px; height: 34px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--accent);
+  }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.35; }
+  .brand-name { font-size: 1rem; font-weight: 600; letter-spacing: -0.2px; color: var(--text); }
+  .brand-sub  { font-size: 0.72rem; color: var(--text-3); letter-spacing: 0.2px; }
+  .header-right { display: flex; align-items: center; gap: 18px; }
+  .header-meta {
+    font-size: 0.76rem;
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.2px;
+  }
+  .header-actions { display: flex; gap: 8px; }
 
-/* 탭 */
-.tabs {
-background: var(–surface);
-border-bottom: 1px solid var(–border);
-padding: 0 36px;
-display: flex;
-position: sticky;
-top: 62px;
-z-index: 90;
-}
-.tab-btn {
-padding: 0 26px;
-height: 48px;
-background: none;
-border: none;
-color: var(–muted);
-font-size: 0.9rem;
-font-weight: 600;
-cursor: pointer;
-border-bottom: 2.5px solid transparent;
-transition: all 0.18s;
-font-family: inherit;
-display: flex; align-items: center; gap: 7px;
-}
-.tab-btn.active { color: var(–accent); border-bottom-color: var(–accent); }
-.tab-btn:hover:not(.active) { color: var(–text); }
-.tab-count {
-background: var(–accent-l);
-color: var(–accent);
-font-size: 0.72rem;
-font-weight: 700;
-padding: 2px 8px;
-border-radius: 20px;
-border: 1px solid rgba(232,164,85,0.25);
-}
+  /* 탭 */
+  .tabs {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    display: flex;
+    gap: 6px;
+    position: sticky;
+    top: 68px;
+    z-index: 90;
+  }
+  .tab-btn {
+    padding: 0 4px;
+    margin-right: 30px;
+    height: 46px;
+    background: none;
+    border: none;
+    color: var(--text-3);
+    font-size: 0.86rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    font-family: inherit;
+    display: flex; align-items: center; gap: 6px;
+    letter-spacing: -0.1px;
+  }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+  .tab-btn:hover:not(.active) { color: var(--text-2); }
+  .tab-count { color: var(--text-3); font-weight: 500; }
+  .tab-btn.active .tab-count { color: var(--accent); }
 
-/* 레이아웃 */
-main { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
-.panel { display: none; animation: fadeUp 0.2s ease; }
-.panel.active { display: block; }
-@keyframes fadeUp {
-from { opacity:0; transform:translateY(8px); }
-to   { opacity:1; transform:translateY(0); }
-}
+  /* 레이아웃 */
+  main { max-width: 900px; margin: 0 auto; padding: 48px 24px 80px; }
+  .panel { display: none; animation: fadeUp 0.25s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(6px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
 
-.section-header { margin-bottom: 20px; }
-.section-title  { font-size: 1.05rem; font-weight: 700; color: var(–text); letter-spacing: -0.3px; }
-.section-sub    { font-size: 0.82rem; color: var(–muted); margin-top: 4px; }
+  .section-head { margin-bottom: 28px; }
+  .section-title { font-size: 1.28rem; font-weight: 600; letter-spacing: -0.4px; color: var(--text); }
+  .section-sub   { font-size: 0.83rem; color: var(--text-2); margin-top: 6px; line-height: 1.5; }
 
-/* 카드 */
-.card {
-background: var(–surface);
-border: 1px solid var(–border);
-border-radius: 14px;
-padding: 26px 30px;
-margin-bottom: 18px;
-box-shadow: var(–shadow);
-}
-.card-header {
-display: flex; align-items: center; gap: 10px;
-margin-bottom: 22px;
-padding-bottom: 16px;
-border-bottom: 1px solid var(–border);
-}
-.card-icon {
-width: 30px; height: 30px;
-background: var(–accent-l);
-border: 1px solid rgba(232,164,85,0.2);
-border-radius: 8px;
-display: flex; align-items: center; justify-content: center;
-font-size: 0.9rem;
-}
-.card-title { font-size: 0.93rem; font-weight: 700; color: var(–text); }
+  /* 카드 */
+  .card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 30px;
+    margin-bottom: 16px;
+  }
+  .card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 22px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .card-label {
+    font-size: 0.72rem; font-weight: 700; color: var(--text-2);
+    text-transform: uppercase; letter-spacing: 1.2px;
+  }
 
-/* 폼 */
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-.form-group { display: flex; flex-direction: column; gap: 7px; }
-.form-group.full { grid-column: 1 / -1; }
-label { font-size: 0.79rem; font-weight: 600; color: var(–muted); text-transform: uppercase; letter-spacing: 0.4px; }
-.required::after { content: ’ *’; color: var(–accent); }
+  /* 폼 */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .form-group { display: flex; flex-direction: column; gap: 8px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 0.78rem; font-weight: 500; color: var(--text-2); letter-spacing: 0.1px; }
+  .required::after { content: ' *'; color: var(--accent); }
 
-input[type=“text”], input[type=“date”], input[type=“time”], textarea {
-background: var(–card);
-border: 1px solid var(–border);
-border-radius: 9px;
-color: var(–text);
-font-size: 0.93rem;
-padding: 11px 14px;
-font-family: inherit;
-transition: border-color 0.15s, box-shadow 0.15s;
-outline: none;
-resize: vertical;
-width: 100%;
-}
-input:focus, textarea:focus {
-border-color: var(–accent);
-box-shadow: 0 0 0 3px rgba(232,164,85,0.12);
-}
-input::placeholder, textarea::placeholder { color: var(–muted); opacity: 0.7; }
-textarea { min-height: 100px; line-height: 1.6; }
+  input[type="text"], input[type="date"], input[type="time"], textarea {
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.92rem;
+    padding: 12px 14px;
+    font-family: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none;
+    resize: vertical;
+    width: 100%;
+    color-scheme: dark;
+  }
+  input:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+  input::placeholder, textarea::placeholder { color: var(--text-3); }
+  textarea { min-height: 96px; line-height: 1.65; }
 
-/* 버튼 */
-.btn {
-padding: 10px 20px;
-border-radius: 9px;
-border: none;
-font-size: 0.88rem;
-font-weight: 600;
-cursor: pointer;
-transition: all 0.15s;
-font-family: inherit;
-display: inline-flex; align-items: center; gap: 7px;
-white-space: nowrap;
-}
-.btn-primary {
-background: linear-gradient(135deg, var(–accent), var(–accent2));
-color: #1e1b18;
-box-shadow: 0 2px 10px rgba(232,164,85,0.3);
-}
-.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(232,164,85,0.4); }
-.btn-success {
-background: linear-gradient(135deg, #4caf7d, #6dbf8a);
-color: #1a2e22;
-box-shadow: 0 2px 8px rgba(109,191,138,0.25);
-}
-.btn-success:hover { opacity: 0.9; transform: translateY(-1px); }
-.btn-outline {
-background: transparent;
-border: 1px solid var(–border);
-color: var(–muted);
-}
-.btn-outline:hover { border-color: var(–accent); color: var(–accent); background: var(–accent-l); }
-.btn-ghost {
-background: transparent; border: none; color: var(–muted);
-padding: 6px 11px; font-size: 0.85rem;
-}
-.btn-ghost:hover { color: var(–danger); }
-.btn-sm { padding: 7px 14px; font-size: 0.82rem; border-radius: 7px; }
-.form-actions {
-display: flex; gap: 10px; margin-top: 22px;
-justify-content: flex-end;
-padding-top: 18px;
-border-top: 1px solid var(–border);
-}
+  /* 버튼 */
+  .btn {
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    display: inline-flex; align-items: center; gap: 6px;
+    white-space: nowrap;
+    letter-spacing: -0.1px;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #14120c;
+  }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-outline {
+    background: transparent;
+    border-color: var(--border-strong);
+    color: var(--text-2);
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-text {
+    background: transparent; border: none; color: var(--text-2);
+    padding: 6px 4px; font-size: 0.85rem; font-weight: 500;
+  }
+  .btn-text:hover { color: var(--danger); }
+  .btn-sm { padding: 7px 14px; font-size: 0.8rem; }
+  .form-actions {
+    display: flex; gap: 10px; margin-top: 24px;
+    justify-content: flex-end;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
 
-/* 통계 */
-.stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 22px; }
-.stat-card {
-background: var(–surface);
-border: 1px solid var(–border);
-border-radius: 13px;
-padding: 20px 22px;
-box-shadow: var(–shadow);
-display: flex; align-items: center; gap: 14px;
-transition: box-shadow 0.15s, border-color 0.15s;
-}
-.stat-card:hover { box-shadow: var(–shadow-md); border-color: rgba(232,164,85,0.3); }
-.stat-icon {
-width: 44px; height: 44px;
-border-radius: 11px;
-display: flex; align-items: center; justify-content: center;
-font-size: 1.25rem; flex-shrink: 0;
-}
-.si-a { background: rgba(232,164,85,0.15); border: 1px solid rgba(232,164,85,0.2); }
-.si-b { background: rgba(109,191,138,0.15); border: 1px solid rgba(109,191,138,0.2); }
-.si-c { background: rgba(212,132,90,0.15);  border: 1px solid rgba(212,132,90,0.2); }
-.stat-num {
-font-size: 1.8rem; font-weight: 700;
-color: var(–accent);
-letter-spacing: -1px; line-height: 1;
-}
-.stat-label { font-size: 0.78rem; color: var(–muted); margin-top: 3px; }
+  /* 통계 */
+  .stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface-2);
+    padding: 22px 26px;
+    border-left: 2px solid var(--accent);
+  }
+  .stat-card:nth-child(2) { border-left-color: var(--success); }
+  .stat-card:nth-child(3) { border-left-color: var(--text-3); }
+  .stat-num {
+    font-size: 1.7rem; font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.8px; line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-label { font-size: 0.76rem; color: var(--text-2); margin-top: 8px; letter-spacing: 0.1px; }
 
-/* 검색 */
-.search-bar { display: flex; gap: 10px; margin-bottom: 18px; }
-.search-wrap { flex: 1; position: relative; }
-.search-wrap input { padding-left: 36px; }
-.search-ico { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(–muted); font-size: 0.9rem; pointer-events: none; }
+  /* 검색 */
+  .search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
+  .search-wrap { flex: 1; position: relative; }
+  .search-wrap input { padding-left: 34px; }
+  .search-ico { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--text-3); font-size: 0.85rem; pointer-events: none; }
 
-/* 테이블 */
-.table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(–border); }
-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-thead tr { background: var(–card); }
-th {
-padding: 12px 14px;
-text-align: left;
-color: var(–muted);
-font-weight: 600;
-font-size: 0.76rem;
-text-transform: uppercase;
-letter-spacing: 0.5px;
-border-bottom: 1px solid var(–border);
-white-space: nowrap;
-}
-td {
-padding: 13px 14px;
-border-bottom: 1px solid var(–border);
-vertical-align: middle;
-color: var(–muted);
-line-height: 1.5;
-}
-.td-main { color: var(–text); font-weight: 500; }
-.td-ell { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-tbody tr:last-child td { border-bottom: none; }
-tbody tr:hover { background: var(–card); transition: background 0.12s; }
+  /* 테이블 */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+  th {
+    padding: 10px 14px;
+    text-align: left;
+    color: var(--text-3);
+    font-weight: 600;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    border-bottom: 1px solid var(--border-strong);
+    white-space: nowrap;
+  }
+  td {
+    padding: 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+    color: var(--text-2);
+    line-height: 1.5;
+  }
+  .td-main { color: var(--text); font-weight: 500; }
+  .td-ell { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .td-no { color: var(--text-3); font-variant-numeric: tabular-nums; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--surface-3); }
+  .link-btn {
+    background: none; border: none; font-family: inherit; cursor: pointer;
+    color: var(--accent); font-size: 0.83rem; font-weight: 600; padding: 4px 0;
+  }
+  .link-btn:hover { opacity: 0.75; }
+  .del-btn {
+    background: none; border: none; font-family: inherit; cursor: pointer;
+    color: var(--text-3); font-size: 0.95rem; padding: 4px 6px; line-height: 1;
+  }
+  .del-btn:hover { color: var(--danger); }
 
-.badge-no {
-display: inline-flex; align-items: center; justify-content: center;
-width: 26px; height: 26px;
-border-radius: 7px;
-background: var(–accent-l);
-border: 1px solid rgba(232,164,85,0.2);
-color: var(–accent);
-font-size: 0.76rem; font-weight: 700;
-}
+  /* 빈 상태 */
+  .empty-state { text-align: center; padding: 64px 20px; }
+  .empty-title { font-size: 0.9rem; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .empty-sub   { font-size: 0.8rem; color: var(--text-3); }
 
-/* 빈 상태 */
-.empty-state { text-align: center; padding: 60px 20px; color: var(–muted); }
-.empty-icon  { font-size: 2.8rem; margin-bottom: 14px; opacity: 0.4; }
-.empty-title { font-size: 0.93rem; font-weight: 600; color: var(–text); margin-bottom: 6px; }
-.empty-sub   { font-size: 0.82rem; }
+  /* 토스트 */
+  #toast {
+    position: fixed; bottom: 28px; right: 28px;
+    padding: 13px 20px;
+    border-radius: 9px;
+    font-weight: 600; font-size: 0.85rem;
+    opacity: 0; transform: translateY(10px);
+    transition: all 0.22s ease;
+    z-index: 999; pointer-events: none;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+  #toast.ok  { background: var(--surface-2); color: var(--success); border-color: rgba(111,174,130,0.3); }
+  #toast.err { background: var(--surface-2); color: var(--danger);  border-color: rgba(217,122,108,0.3); }
 
-/* 토스트 */
-#toast {
-position: fixed; bottom: 28px; right: 28px;
-padding: 13px 20px;
-border-radius: 10px;
-font-weight: 600; font-size: 0.88rem;
-opacity: 0; transform: translateY(14px);
-transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
-z-index: 999; pointer-events: none;
-box-shadow: var(–shadow-md);
-}
-#toast.show { opacity: 1; transform: translateY(0); }
-#toast.ok  { background: var(–success); color: #1a2e22; }
-#toast.err { background: var(–danger);  color: #fff; }
+  /* 모달 */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(6px);
+    z-index: 200; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 14px; padding: 32px;
+    width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto;
+    box-shadow: var(--shadow-md);
+    animation: fadeUp 0.2s ease;
+  }
+  .modal-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--border);
+  }
+  .modal-title { font-size: 1.02rem; font-weight: 600; color: var(--text); letter-spacing: -0.2px; }
+  .modal-date  { font-size: 0.78rem; color: var(--text-3); margin-top: 5px; }
+  .modal-field { margin-bottom: 18px; }
+  .modal-field:last-child { margin-bottom: 0; }
+  .modal-label { font-size: 0.7rem; color: var(--text-3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+  .modal-value {
+    background: var(--surface-3); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 16px;
+    font-size: 0.89rem; line-height: 1.7; white-space: pre-wrap; color: var(--text-2);
+  }
+  .modal-value.hl {
+    border-left: 2px solid var(--accent);
+    color: var(--text);
+  }
 
-/* 모달 */
-.modal-overlay {
-display: none; position: fixed; inset: 0;
-background: rgba(0,0,0,0.6);
-backdrop-filter: blur(4px);
-z-index: 200; align-items: center; justify-content: center; padding: 20px;
-}
-.modal-overlay.show { display: flex; }
-.modal {
-background: var(–surface);
-border: 1px solid var(–border);
-border-radius: 16px; padding: 30px;
-width: 100%; max-width: 580px; max-height: 85vh; overflow-y: auto;
-box-shadow: var(–shadow-md);
-animation: fadeUp 0.2s ease;
-}
-.modal-header {
-display: flex; justify-content: space-between; align-items: flex-start;
-margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px solid var(–border);
-}
-.modal-title { font-size: 1rem; font-weight: 700; color: var(–accent); }
-.modal-date  { font-size: 0.79rem; color: var(–muted); margin-top: 3px; }
-.modal-field { margin-bottom: 16px; }
-.modal-label { font-size: 0.75rem; color: var(–muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 7px; }
-.modal-value {
-background: var(–card); border: 1px solid var(–border);
-border-radius: 9px; padding: 13px 15px;
-font-size: 0.91rem; line-height: 1.65; white-space: pre-wrap; color: var(–text);
-}
-.modal-value.hl {
-border-left: 3px solid var(–accent);
-background: var(–accent-l);
-}
-
-@media (max-width: 640px) {
-.form-grid { grid-template-columns: 1fr; }
-.stats-row { grid-template-columns: 1fr; }
-header     { padding: 0 16px; }
-.tabs      { padding: 0 12px; }
-main       { padding: 18px 12px; }
-.card      { padding: 18px 16px; }
-.header-meta { display: none; }
-.tab-btn   { padding: 0 14px; font-size: 0.85rem; }
-}
+  @media (max-width: 640px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: 1fr; }
+    header       { padding: 0 18px; }
+    .brand-sub   { display: none; }
+    .tabs        { padding: 0 18px; }
+    main         { padding: 32px 16px 64px; }
+    .card        { padding: 20px 18px; }
+    .header-meta { display: none; }
+    .tab-btn     { margin-right: 20px; font-size: 0.82rem; }
+  }
 </style>
-
 </head>
 <body>
 
 <header>
-  <div class="logo">
-    <div class="logo-icon">📋</div>
-    <div class="logo-text">Meeting <span>Minutes</span></div>
+  <div class="brand">
+    <div class="brand-mark">MM</div>
+    <div class="brand-text">
+      <span class="brand-name">Meeting Minutes</span>
+      <span class="brand-sub">회의록 관리 시스템</span>
+    </div>
   </div>
   <div class="header-right">
     <span class="header-meta" id="header-date"></span>
-    <button class="btn btn-outline btn-sm" onclick="importExcel()">📂 불러오기</button>
-    <button class="btn btn-success btn-sm" onclick="exportExcel()">💾 Excel 저장</button>
+    <div class="header-actions">
+      <button class="btn btn-outline btn-sm" onclick="importExcel()">불러오기</button>
+      <button class="btn btn-primary btn-sm" onclick="exportExcel()">Excel 저장</button>
+    </div>
     <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="handleFileImport(event)"/>
   </div>
 </header>
 
 <div class="tabs">
-  <button class="tab-btn active" onclick="switchTab('write', this)">✏️ 회의록 작성</button>
+  <button class="tab-btn active" onclick="switchTab('write', this)">회의록 작성</button>
   <button class="tab-btn" onclick="switchTab('history', this)">
-    📁 이력 조회 <span class="tab-count" id="tab-count">0</span>
+    이력 조회 <span class="tab-count" id="tab-count">0</span>
   </button>
 </div>
 
 <main>
 
   <!-- 작성 탭 -->
-
   <div class="panel active" id="panel-write">
-    <div class="section-header">
+    <div class="section-head">
       <div class="section-title">새 회의록 작성</div>
       <div class="section-sub">저장하면 브라우저에 자동 누적됩니다 · 중요 내용은 Excel 저장으로 백업하세요</div>
     </div>
 
-```
-<div class="card">
-  <div class="card-header">
-    <div class="card-icon">🗓</div>
-    <div class="card-title">기본 정보</div>
-  </div>
-  <div class="form-grid">
-    <div class="form-group">
-      <label class="required">날짜</label>
-      <input type="date" id="f-date"/>
+    <div class="card">
+      <div class="card-head">
+        <span class="card-label">기본 정보</span>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="required">날짜</label>
+          <input type="date" id="f-date"/>
+        </div>
+        <div class="form-group">
+          <label>시간</label>
+          <input type="time" id="f-time"/>
+        </div>
+        <div class="form-group full">
+          <label class="required">안건 / 주제</label>
+          <input type="text" id="f-agenda" placeholder="회의 안건 또는 주제를 입력하세요"/>
+        </div>
+      </div>
     </div>
-    <div class="form-group">
-      <label>시간</label>
-      <input type="time" id="f-time"/>
-    </div>
-    <div class="form-group full">
-      <label class="required">안건 / 주제</label>
-      <input type="text" id="f-agenda" placeholder="회의 안건 또는 주제를 입력하세요"/>
-    </div>
-  </div>
-</div>
 
-<div class="card">
-  <div class="card-header">
-    <div class="card-icon">📝</div>
-    <div class="card-title">회의 내용</div>
-  </div>
-  <div class="form-grid">
-    <div class="form-group full">
-      <label>회의 내용 (세부)</label>
-      <textarea id="f-content" placeholder="회의에서 논의된 세부 내용을 자유롭게 입력하세요" style="min-height:120px"></textarea>
+    <div class="card">
+      <div class="card-head">
+        <span class="card-label">회의 내용</span>
+      </div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>회의 내용 (세부)</label>
+          <textarea id="f-content" placeholder="회의에서 논의된 세부 내용을 자유롭게 입력하세요" style="min-height:120px"></textarea>
+        </div>
+        <div class="form-group full">
+          <label>결정사항 / 액션아이템</label>
+          <textarea id="f-action" placeholder="결정된 사항, 담당자별 액션아이템, 다음 회의 일정 등을 입력하세요"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-outline" onclick="clearForm()">초기화</button>
+        <button class="btn btn-primary" onclick="saveMeeting()">저장하기</button>
+      </div>
     </div>
-    <div class="form-group full">
-      <label>결정사항 / 액션아이템</label>
-      <textarea id="f-action" placeholder="결정된 사항, 담당자별 액션아이템, 다음 회의 일정 등을 입력하세요"></textarea>
-    </div>
-  </div>
-  <div class="form-actions">
-    <button class="btn btn-outline" onclick="clearForm()">↺ 초기화</button>
-    <button class="btn btn-primary" onclick="saveMeeting()">✓ 저장하기</button>
-  </div>
-</div>
-```
-
   </div>
 
   <!-- 이력 탭 -->
-
   <div class="panel" id="panel-history">
     <div class="stats-row">
       <div class="stat-card">
-        <div class="stat-icon si-a">📋</div>
-        <div>
-          <div class="stat-num" id="stat-total">0</div>
-          <div class="stat-label">전체 회의록</div>
-        </div>
+        <div class="stat-num" id="stat-total">0</div>
+        <div class="stat-label">전체 회의록</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon si-b">📅</div>
-        <div>
-          <div class="stat-num" id="stat-month">0</div>
-          <div class="stat-label">이번 달</div>
-        </div>
+        <div class="stat-num" id="stat-month">0</div>
+        <div class="stat-label">이번 달</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon si-c">🕐</div>
-        <div>
-          <div class="stat-num" id="stat-recent" style="font-size:1.05rem">—</div>
-          <div class="stat-label">최근 회의일</div>
-        </div>
+        <div class="stat-num" id="stat-recent" style="font-size:1.05rem">—</div>
+        <div class="stat-label">최근 회의일</div>
       </div>
     </div>
 
-```
-<div class="card" style="padding:22px 26px">
-  <div class="search-bar">
-    <div class="search-wrap">
-      <span class="search-ico">🔍</span>
-      <input type="text" id="search-input" placeholder="안건, 회의내용, 결정사항 검색..." oninput="renderTable()"/>
+    <div class="card" style="padding:24px 26px">
+      <div class="search-bar">
+        <div class="search-wrap">
+          <span class="search-ico">⌕</span>
+          <input type="text" id="search-input" placeholder="안건, 회의내용, 결정사항 검색..." oninput="renderTable()"/>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('search-input').value='';renderTable()">초기화</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px">No</th>
+              <th>날짜</th>
+              <th>시간</th>
+              <th>안건 / 주제</th>
+              <th>결정사항</th>
+              <th style="width:56px">상세</th>
+              <th style="width:40px"></th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+      <div id="empty-state" class="empty-state" style="display:none">
+        <div class="empty-title">저장된 회의록이 없습니다</div>
+        <div class="empty-sub">회의록 작성 탭에서 새 회의록을 추가해 보세요</div>
+      </div>
     </div>
-    <button class="btn btn-outline btn-sm" onclick="document.getElementById('search-input').value='';renderTable()">초기화</button>
-  </div>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th style="width:46px">No</th>
-          <th>날짜</th>
-          <th>시간</th>
-          <th>안건 / 주제</th>
-          <th>결정사항</th>
-          <th style="width:68px">상세</th>
-          <th style="width:52px">삭제</th>
-        </tr>
-      </thead>
-      <tbody id="table-body"></tbody>
-    </table>
-  </div>
-  <div id="empty-state" class="empty-state" style="display:none">
-    <div class="empty-icon">📭</div>
-    <div class="empty-title">저장된 회의록이 없습니다</div>
-    <div class="empty-sub">회의록 작성 탭에서 새 회의록을 추가해 보세요</div>
-  </div>
-</div>
-```
-
   </div>
 
 </main>
 
 <!-- 모달 -->
-
 <div class="modal-overlay" id="modal" onclick="closeModal(event)">
   <div class="modal">
     <div class="modal-header">
@@ -504,7 +467,7 @@ main       { padding: 18px 12px; }
         <div class="modal-title" id="modal-title"></div>
         <div class="modal-date"  id="modal-date"></div>
       </div>
-      <button class="btn btn-outline btn-sm" onclick="document.getElementById('modal').classList.remove('show')">✕ 닫기</button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('modal').classList.remove('show')">닫기</button>
     </div>
     <div id="modal-content"></div>
   </div>
@@ -582,13 +545,13 @@ main       { padding: 18px 12px; }
     empty.style.display = 'none';
     tbody.innerHTML = filtered.map((m,i) => `
       <tr>
-        <td><span class="badge-no">${filtered.length - i}</span></td>
-        <td style="font-size:0.85rem">${m.date}</td>
-        <td style="font-size:0.85rem;color:var(--muted)">${m.time||'—'}</td>
+        <td class="td-no">${filtered.length - i}</td>
+        <td style="font-size:0.83rem">${m.date}</td>
+        <td style="font-size:0.83rem;color:var(--text-3)">${m.time||'—'}</td>
         <td class="td-main td-ell">${m.agenda}</td>
         <td class="td-ell">${m.action||'—'}</td>
-        <td><button class="btn btn-outline btn-sm" onclick="showDetail(${m.id})">보기</button></td>
-        <td><button class="btn btn-ghost" onclick="deleteMeeting(${m.id})">✕</button></td>
+        <td><button class="link-btn" onclick="showDetail(${m.id})">보기</button></td>
+        <td><button class="del-btn" onclick="deleteMeeting(${m.id})">✕</button></td>
       </tr>
     `).join('');
   }
